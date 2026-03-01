@@ -10,7 +10,7 @@
 %%
 "//".*               { /* skip single-line comments */ }
 "/*"([^*]|\*+[^*/])*\*+"/"   { /* skip multi-line comments */ }
-\"([^"\\\n]|\\.)*\" {yylval->node = new_str(yytext, yylloc->first_line, yylloc->first_column);}  
+\"([^"\\\n]|\\.)*\" {yylval->node = new_str(yytext, yylloc->first_line, yylloc->first_column); return STRING_LITERAL;}  
 [ \t\r\n]+          { /* skip */ }
 if                  { return IF; }
 else                { return ELSE; }
@@ -18,6 +18,7 @@ int                 { yylval->datatype = INT; return DATATYPES; }
 short               { yylval->datatype = SHORT; return DATATYPES; }
 float               { yylval->datatype = FLOAT; return DATATYPES; }
 double              { yylval->datatype = DOUBLE; return DATATYPES; }
+string              { yylval->datatype = STRINGS; return DATATYPES; }
 [0-9]+(\.[0-9]+)? {
     yylval->node = new_num(yytext, UNKNOWN, yylloc->first_line, yylloc->first_column);
     return NUMBER;

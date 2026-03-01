@@ -25,7 +25,7 @@
     int yyparse(void);
 }
 
-%token <node> IDENTIFIER NUMBER
+%token <node> IDENTIFIER NUMBER STRING_LITERAL
 
 %token PLUS MINUS STAR SLASH MOD POWER
 %token INC DEC
@@ -89,6 +89,7 @@ if_stmt
 expr
     : NUMBER                    {$$ = $1;}
 	| IDENTIFIER				{$$ = $1;}
+    | STRING_LITERAL            {$$ = $1;}
 
     | expr PLUS expr            { $$ = new_binop($1, $3, @$.first_line, @$.first_column, OP_ADD); }
     | expr MINUS expr           { $$ = new_binop($1, $3, @$.first_line, @$.first_column, OP_SUB); }
@@ -132,13 +133,16 @@ assignment
             $2->datatype = $1;
             if ($4->kind == AST_NUM && $4->datatype == UNKNOWN) {
                 $4->datatype = $1;
-            }
+        }
             $$ = new_assign($2, $4, $1, @$.first_line, @$.first_column, OP_ASSIGN);
+        }
+    | IDENTIFIER ASSIGN expr
+        {
+            { $$ = new_assign($1, $3, $1->datatype, @$.first_line, @$.first_column, OP_ASSIGN); }
         }
 
     | IDENTIFIER PLUS_ASSIGN expr
         { $$ = new_assign($1, $3,UNKNOWN, @$.first_line, @$.first_column, OP_PLUS_ASSIGN); }
-
     | IDENTIFIER MINUS_ASSIGN expr
         { $$ = new_assign($1, $3,UNKNOWN, @$.first_line, @$.first_column, OP_MINUS_ASSIGN); }
 
