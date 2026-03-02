@@ -31,8 +31,9 @@ void semantic_check(ASTNode_t *root) {
 }
 
 /* Helpers */
-void type_error(ASTNode_t *n, const char *msg) {
-    fprintf(stderr, "Semantic error [%d:%d]: %s\n", n->line, n->col, msg);
+void type_error(ASTNode_t *n,const char* msg) {
+    fprintf(stderr, "Error: %s", msg);
+    n->datatype = UNKNOWN;
     exit(1);
 }
 
@@ -50,6 +51,7 @@ DataTypes_t promote(DataTypes_t a, DataTypes_t b) {
 /* Main recursive checker */
 DataTypes_t check_expr(ASTNode_t *n) {
     if (!n) return UNKNOWN;
+    exitcode_t exit_code;
 
     switch (n->kind) {
 
@@ -60,8 +62,16 @@ DataTypes_t check_expr(ASTNode_t *n) {
         return STRINGS;
 
     case AST_VAR:
-        /* getvar() already errors if undefined */
-        getvar(n->var, n->datatype, n->line, n->col);
+        exit_code = exists(n->var, n->datatype);
+        switch (exit_code)
+        {
+        case NOT_DECLARED:
+            fprintf(stderr, "Error: x is not defined\n");
+            exit(EXIT_FAILURE);
+        case TYPE_MISMATCH:
+            type_error(n, "Type Mismatch");
+        default: break;
+        }
         return n->datatype;
 
     case AST_BINOP: {
@@ -119,8 +129,10 @@ DataTypes_t check_expr(ASTNode_t *n) {
         if (lhs_t != rhs_t) {
             type_error(n, "Type mismatch in assignment");
         }
+
         printf("assign lhs=%d rhs=%d node=%d\n", lhs_t, rhs_t, n->datatype);
         n->datatype = lhs_t;
+        declare(n->assign.lhs->var, n->assign.lhs->datatype);
         return lhs_t;
     }
 

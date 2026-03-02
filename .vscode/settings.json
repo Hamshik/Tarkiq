@@ -4,5 +4,16 @@
         "${workspaceFolder}/src/**/*"
     ],
     "makefile.buildLog": "log",
-    "makefile.makefilePath": "build/Makefile"
+    "makefile.makefilePath": "build/Makefile",
+    "cSpell.words": [
+        "BITNOT",
+        "DATATYPES",
+        "fprintf",
+        "prec",
+        "RSHIFT",
+        "UMINUS",
+        "unop",
+        "yyerror",
+        "YYLTYPE"
+    ]
 }

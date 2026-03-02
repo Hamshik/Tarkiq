@@ -53,6 +53,7 @@
 %left STAR SLASH MOD
 %right POWER
 %right UPLUS UMINUS NOT BITNOT
+%left INC DEC
 %precedence POSTFIX
 %nonassoc LOWER_THAN_ELSE
 %nonassoc ELSE
@@ -120,8 +121,10 @@ expr
     | NOT expr                  { $$ = new_unop($2, @$.first_line, @$.first_column, OP_NOT); }
     | BITNOT expr               { $$ = new_unop($2, @$.first_line, @$.first_column, OP_BITNOT); }
 
-    | expr INC %prec POSTFIX    { $$ = new_unop($1, @$.first_line, @$.first_column, OP_INC); }
-    | expr DEC %prec POSTFIX    { $$ = new_unop($1, @$.first_line, @$.first_column, OP_DEC); }
+    | IDENTIFIER INC %prec POSTFIX
+                                { $$ = new_unop($1, @$.first_line, @$.first_column, OP_INC); }
+    | IDENTIFIER DEC %prec POSTFIX
+                                { $$ = new_unop($1, @$.first_line, @$.first_column, OP_DEC); }
 
     | LPAREN expr RPAREN        { $$ = $2; }
     | assignment                 {$$ = $1;}
@@ -138,7 +141,7 @@ assignment
         }
     | IDENTIFIER ASSIGN expr
         {
-            { $$ = new_assign($1, $3, $1->datatype, @$.first_line, @$.first_column, OP_ASSIGN); }
+            $$ = new_assign($1, $3, $1->datatype, @$.first_line, @$.first_column, OP_ASSIGN);
         }
 
     | IDENTIFIER PLUS_ASSIGN expr
