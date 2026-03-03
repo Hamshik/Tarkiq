@@ -13,7 +13,8 @@ typedef enum ASTKind {
     AST_SEQ,
     NODE_IF,
     AST_STR,
-    AST_CHAR
+    AST_CHAR,
+    AST_BOOL
 } ASTKind_t;
 
 typedef enum DataTypes{

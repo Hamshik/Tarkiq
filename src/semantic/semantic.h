@@ -26,5 +26,6 @@ DataTypes_t lookup(const char* name);
 bool declare(const char* name,DataTypes_t type);
 exitcode_t exists(const char* name, DataTypes_t type);
 exitcode_t assign_check(const char* name, DataTypes_t rhs_type);
+void clear_symbols(void);
 
 #endif

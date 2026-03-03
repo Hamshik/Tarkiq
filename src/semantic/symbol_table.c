@@ -42,3 +42,13 @@ exitcode_t assign_check(const char* name, DataTypes_t rhs_t){
     if(v->type != rhs_t) return TYPE_MISMATCH;
     return SUCCESS;
 }
+
+void clear_symbols(void) {
+    Symboltable_t *cur, *tmp;
+
+    HASH_ITER(hh, envs, cur, tmp) {
+        HASH_DEL(envs, cur);
+        free((char*)cur->name);   // because you used strdup(name)
+        free(cur);
+    }
+}

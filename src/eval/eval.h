@@ -18,13 +18,13 @@
     case OP_RSHIFT: return (Value){ .field = (a) >> (b) }; \
     case OP_BITAND: return (Value){ .field = (a) & (b) }; \
     case OP_BITOR:  return (Value){ .field = (a) | (b) }; \
-    case OP_BITXOR: return (Value){ .field = (a) ^ (b) };    \
-    case OP_EQ: return (Value){.field = (a) == (b)};\
-    case OP_NEQ: return (Value){.field = (a) != (b)};\
-    case OP_GT: return (Value){.field = (a) > (b)};\
-    case OP_LT: return (Value){.field = (a) < (b)};\
-    case OP_GE: return (Value){.field = (a) >= (b)};\
-    case OP_LE: return (Value){.field = (a) <= (b)};
+    case OP_BITXOR: return (Value){ .field = (a) ^ (b) }; \
+    case OP_EQ: return (Value){.bval = (a) == (b)};\
+    case OP_NEQ: return (Value){.bval = (a) != (b)};\
+    case OP_GT: return (Value){.bval = (a) > (b)};\
+    case OP_LT: return (Value){.bval = (a) < (b)};\
+    case OP_GE: return (Value){.bval = (a) >= (b)};\
+    case OP_LE: return (Value){.bval = (a) <= (b)}
 
 #define FP_CASES(field, a, b, POWF, MODF) \
     case OP_ADD: return (Value){ .field = (a) + (b) }; \
@@ -33,12 +33,12 @@
     case OP_DIV: return (Value){ .field = (a) / (b) }; \
     case OP_POW: return (Value){ .field = POWF((a), (b)) }; \
     case OP_MOD: return (Value){ .field = MODF((a), (b)) }; \
-    case OP_EQ: return (Value){.field = (a) == (b)};\
-    case OP_NEQ: return (Value){.field = (a) != (b)};\
-    case OP_GT: return (Value){.field = (a) > (b)};\
-    case OP_LT: return (Value){.field = (a) < (b)};\
-    case OP_GE: return (Value){.field = (a) >= (b)};\
-    case OP_LE: return (Value){.field = (a) <= (b)};
+    case OP_EQ: return (Value){.bval = (a) == (b)};\
+    case OP_NEQ: return (Value){.bval = (a) != (b)};\
+    case OP_GT: return (Value){.bval = (a) > (b)};\
+    case OP_LT: return (Value){.bval = (a) < (b)};\
+    case OP_GE: return (Value){.bval = (a) >= (b)};\
+    case OP_LE: return (Value){.bval = (a) <= (b)}
 
 
 #ifndef EVAL_H
@@ -54,5 +54,6 @@ Value eval_binop_double(OP_kind_t op, double a, double b);
 Value eval_binop_float(OP_kind_t op, float a, float b);
 Value eval_binop_int(OP_kind_t op, bool isShort, int a, int b);
 OP_kind_t get_assign_op(OP_kind_t op);
+bool isBoolOP(OP_kind_t op);
 
 #endif

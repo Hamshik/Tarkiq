@@ -44,6 +44,19 @@ Value eval_binop_double(OP_kind_t op, double a, double b) {
     switch (op) { FP_CASES(lfnum, a, b, pow, fmod); default: DIE("Invalid double binary op"); }
 }
 
+bool isBoolOP(OP_kind_t op){
+    switch (op)
+    {
+    case OP_EQ:
+    case OP_NEQ:
+    case OP_GT:
+    case OP_LT:
+    case OP_GE:
+    case OP_LE:
+        return true;
+    default: return false;
+    }
+}
 void do_unop_operation(Value *result, Value *operand,DataTypes_t datatype,OP_kind_t op) {
     
     switch (datatype)
@@ -113,12 +126,6 @@ Value eval_bool(OP_kind_t op, bool a, bool b) {
     switch (op) {
         case OP_AND: return (Value){.bval = a && b};
         case OP_OR:  return (Value){.bval = a || b};
-        case OP_EQ: return (Value){.bval = (a) == (b)};\
-        case OP_NEQ: return (Value){.bval = (a) != (b)};\
-        case OP_GT: return (Value){.bval = (a) > (b)};\
-        case OP_LT: return (Value){.bval = (a) < (b)};\
-        case OP_GE: return (Value){.bval = (a) >= (b)};\
-        case OP_LE: return (Value){.bval = (a) <= (b)};
         default:
             fprintf(stderr, "Invalid boolean operator\n");
             exit(EXIT_FAILURE);
@@ -180,11 +187,24 @@ Value ast_eval(ASTNode_t *node) {
         Value r = ast_eval(node->bin.right);
 
         switch (node->datatype) {
-            case INT: v = eval_binop_int(node->bin.op, false, l.inum, r.inum); break;
-            case FLOAT: v = eval_binop_float(node->bin.op, l.fnum, r.fnum); break;
-            case DOUBLE: v = eval_binop_double(node->bin.op, l.lfnum, r.lfnum); break;
-            case SHORT: v = eval_binop_int(node->bin.op, true, l.shnum, r.shnum); break;
+            case INT:
+                v = eval_binop_int(node->bin.op, false, l.inum, r.inum);
+                if(isBoolOP(node->bin.op)) node->datatype = BOOL;
+                break;
+            case FLOAT:
+                v = eval_binop_float(node->bin.op, l.fnum, r.fnum);
+                if(isBoolOP(node->bin.op)) node->datatype = BOOL;
+                break;
+            case DOUBLE:
+                v = eval_binop_double(node->bin.op, l.lfnum, r.lfnum);
+                if(isBoolOP(node->bin.op)) node->datatype = BOOL;
+                break;
+            case SHORT:
+                v = eval_binop_int(node->bin.op, true, l.shnum, r.shnum);
+                if(isBoolOP(node->bin.op)) node->datatype = BOOL;
+                break;
             case STRINGS: v = (Value){.str = do_operation_str(l.str, r.str, node->bin.op)}; break;
+            case BOOL: v = eval_bool(node->bin.op, l.bval, r.bval); break;
             default:
                 fprintf(stderr, "Error: unsupported data type for binary Datatypes\n");
                 exit(EXIT_FAILURE);

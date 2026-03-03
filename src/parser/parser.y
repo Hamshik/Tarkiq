@@ -32,11 +32,11 @@
 %token INC DEC
 %token LSHIFT RSHIFT
 %token BITAND BITOR BITXOR BITNOT
-%token LPAREN RPAREN LBRACE RBRACE SEMICOLON
+%token LPAREN RPAREN LBRACE RBRACE SEMICOLON LSQUARE RSQUARE
 %token ASSIGN PLUS_ASSIGN MINUS_ASSIGN STAR_ASSIGN SLASH_ASSIGN MOD_ASSIGN POWER_ASSIGN
-%token LSHIFT_ASSIGN RSHIFT_ASSIGN
+%token LSHIFT_ASSIGN RSHIFT_ASSIGN COLON
 %token AND OR NOT EQ NEQ LT LE GT GE
-%token IF ELSE
+%token IF ELSE LET
 
 %type <node> program stmt_list stmt block if_stmt expr assignment
 %token <datatype> DATATYPES
@@ -127,19 +127,22 @@ expr
     | IDENTIFIER DEC %prec POSTFIX
                                 { $$ = new_unop($1, @$.first_line, @$.first_column, OP_DEC); }
 
-    | LPAREN expr RPAREN        { $$ = $2; }
+    | LPAREN expr RPAREN         { $$ = $2; }
+    | LBRACE expr RBRACE         { $$ = $2; }
+    | LSQUARE expr RSQUARE     { $$ = $2; }
     | assignment                 {$$ = $1;}
     ;
  
 assignment
-    : DATATYPES IDENTIFIER ASSIGN expr
+    : LET IDENTIFIER COLON DATATYPES ASSIGN expr
         {
-            $2->datatype = $1;
-            if ($4->kind == AST_NUM && $4->datatype == UNKNOWN) {
-                $4->datatype = $1;
+            $6->datatype = $4;
+            if ($6->kind == AST_NUM && $6->datatype == UNKNOWN) {
+                $6->datatype = $4;
         }
-            $$ = new_assign($2, $4, $1, @$.first_line, @$.first_column, OP_ASSIGN);
+            $$ = new_assign($2, $6, $4, @$.first_line, @$.first_column, OP_ASSIGN);
         }
+
     | IDENTIFIER ASSIGN expr
         {
             $$ = new_assign($1, $3, $1->datatype, @$.first_line, @$.first_column, OP_ASSIGN);

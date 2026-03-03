@@ -86,31 +86,35 @@ extern int yydebug;
     LBRACE = 277,                  /* LBRACE  */
     RBRACE = 278,                  /* RBRACE  */
     SEMICOLON = 279,               /* SEMICOLON  */
-    ASSIGN = 280,                  /* ASSIGN  */
-    PLUS_ASSIGN = 281,             /* PLUS_ASSIGN  */
-    MINUS_ASSIGN = 282,            /* MINUS_ASSIGN  */
-    STAR_ASSIGN = 283,             /* STAR_ASSIGN  */
-    SLASH_ASSIGN = 284,            /* SLASH_ASSIGN  */
-    MOD_ASSIGN = 285,              /* MOD_ASSIGN  */
-    POWER_ASSIGN = 286,            /* POWER_ASSIGN  */
-    LSHIFT_ASSIGN = 287,           /* LSHIFT_ASSIGN  */
-    RSHIFT_ASSIGN = 288,           /* RSHIFT_ASSIGN  */
-    AND = 289,                     /* AND  */
-    OR = 290,                      /* OR  */
-    NOT = 291,                     /* NOT  */
-    EQ = 292,                      /* EQ  */
-    NEQ = 293,                     /* NEQ  */
-    LT = 294,                      /* LT  */
-    LE = 295,                      /* LE  */
-    GT = 296,                      /* GT  */
-    GE = 297,                      /* GE  */
-    IF = 298,                      /* IF  */
-    ELSE = 299,                    /* ELSE  */
-    DATATYPES = 300,               /* DATATYPES  */
-    UPLUS = 301,                   /* UPLUS  */
-    UMINUS = 302,                  /* UMINUS  */
-    POSTFIX = 303,                 /* POSTFIX  */
-    LOWER_THAN_ELSE = 304          /* LOWER_THAN_ELSE  */
+    LSQUARE = 280,                 /* LSQUARE  */
+    RSQUARE = 281,                 /* RSQUARE  */
+    ASSIGN = 282,                  /* ASSIGN  */
+    PLUS_ASSIGN = 283,             /* PLUS_ASSIGN  */
+    MINUS_ASSIGN = 284,            /* MINUS_ASSIGN  */
+    STAR_ASSIGN = 285,             /* STAR_ASSIGN  */
+    SLASH_ASSIGN = 286,            /* SLASH_ASSIGN  */
+    MOD_ASSIGN = 287,              /* MOD_ASSIGN  */
+    POWER_ASSIGN = 288,            /* POWER_ASSIGN  */
+    LSHIFT_ASSIGN = 289,           /* LSHIFT_ASSIGN  */
+    RSHIFT_ASSIGN = 290,           /* RSHIFT_ASSIGN  */
+    COLON = 291,                   /* COLON  */
+    AND = 292,                     /* AND  */
+    OR = 293,                      /* OR  */
+    NOT = 294,                     /* NOT  */
+    EQ = 295,                      /* EQ  */
+    NEQ = 296,                     /* NEQ  */
+    LT = 297,                      /* LT  */
+    LE = 298,                      /* LE  */
+    GT = 299,                      /* GT  */
+    GE = 300,                      /* GE  */
+    IF = 301,                      /* IF  */
+    ELSE = 302,                    /* ELSE  */
+    LET = 303,                     /* LET  */
+    DATATYPES = 304,               /* DATATYPES  */
+    UPLUS = 305,                   /* UPLUS  */
+    UMINUS = 306,                  /* UMINUS  */
+    POSTFIX = 307,                 /* POSTFIX  */
+    LOWER_THAN_ELSE = 308          /* LOWER_THAN_ELSE  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -124,7 +128,7 @@ union YYSTYPE
     ASTNode_t *node;
     DataTypes_t datatype;
 
-#line 128 "src/parser/parser.h"
+#line 132 "src/parser/parser.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

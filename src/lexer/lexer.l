@@ -5,14 +5,16 @@
 %option nounput
 
 %{
-#include "../parser/parser.h"
+    #include "../parser/parser.h"
 #include "../ast/ASTNode.h"
 #define YY_DECL int yylex(YYSTYPE *yylval_param, YYLTYPE *yylloc_param)
 %}
 
 %%
+[ \t\r\n]+          { /* skip */ }
 "//".*               { /* skip single-line comments */ }
 "/*"([^*]|\*+[^*/])*\*+"/"   { /* skip multi-line comments */ }
+
 \"([^"\\\n]|\\.)*\" {
     size_t n = yyleng;
     char *s = malloc(n - 1);          // remove 2 quotes + keep '\0'
@@ -24,9 +26,11 @@
     free(s);
     return STRING_LITERAL;
 }
-[ \t\r\n]+          { /* skip */ }
+
 if                  { return IF; }
 else                { return ELSE; }
+let                 {return LET;}
+
 int                 { yylval->datatype = INT; return DATATYPES; }
 short               { yylval->datatype = SHORT; return DATATYPES; }
 real32              { yylval->datatype = FLOAT; return DATATYPES; }
@@ -40,12 +44,15 @@ logic               { yylval->datatype = BOOL; return DATATYPES;}
 }
 "++"                { return INC; }
 "--"                { return DEC; }
+":"                 { return COLON;}
 "+"                 { return PLUS; }
 "-"                 { return MINUS; }
 "*"                 { return STAR; }
 "/"                 { return SLASH; }
 "%"                 { return MOD; }
 "**"                { return POWER; }
+"["                 { return LSQUARE;}
+"]"                 { return RSQUARE;}
 "("                 { return LPAREN; }
 ")"                 { return RPAREN; }
 "="                 { return ASSIGN; }

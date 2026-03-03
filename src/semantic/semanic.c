@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "../ast/ASTNode.h"
 #include "semantic.h"
+#include "../eval/eval.h"
 
 static void force_numeric_type(ASTNode_t *n, DataTypes_t t) {
     if (!n || t == UNKNOWN) return;
@@ -60,6 +61,10 @@ DataTypes_t check_expr(ASTNode_t *n) {
 
     case AST_STR:
         return STRINGS;
+    
+    case AST_BOOL:
+        n->datatype = BOOL;
+        return BOOL;
 
     case AST_VAR:
         if(n->datatype == UNKNOWN) n->datatype = lookup(n->var);
@@ -80,6 +85,9 @@ DataTypes_t check_expr(ASTNode_t *n) {
         DataTypes_t lt = check_expr(n->bin.left);
         DataTypes_t rt = check_expr(n->bin.right);
 
+        if(n->bin.left->datatype == UNKNOWN && rt != UNKNOWN && n->bin.left->kind == AST_NUM)lt = rt;
+        if(n->bin.right->datatype == UNKNOWN && lt != UNKNOWN && n->bin.left->kind == AST_NUM)rt = lt;
+
         /* string ops */
         if (lt == STRINGS || rt == STRINGS) {
             if (n->bin.op != OP_ADD || lt != STRINGS || rt != STRINGS) {
@@ -93,7 +101,6 @@ DataTypes_t check_expr(ASTNode_t *n) {
         if (!is_numeric(lt) || !is_numeric(rt)) {
             type_error(n, "Invalid operands for binary operator");
         }
-
         n->datatype = promote(lt, rt);
         return n->datatype;
     }
@@ -150,7 +157,7 @@ DataTypes_t check_expr(ASTNode_t *n) {
 
     case NODE_IF: {
         DataTypes_t ct = check_expr(n->ifnode.cond);
-        if (ct != BOOL) type_error(n, "if condition must be boolean");
+        if (ct != BOOL &&n->ifnode.cond->kind != AST_BOOL) type_error(n, "if condition must be boolean");
 
         check_expr(n->ifnode.then_branch);
         if (n->ifnode.else_branch)
