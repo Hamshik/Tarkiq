@@ -32,7 +32,7 @@ void semantic_check(ASTNode_t *root) {
 
 /* Helpers */
 void type_error(ASTNode_t *n,const char* msg) {
-    fprintf(stderr, "Error: %s", msg);
+    fprintf(stderr, "Error: %s\n\n", msg);
     n->datatype = UNKNOWN;
     exit(1);
 }
@@ -66,7 +66,7 @@ DataTypes_t check_expr(ASTNode_t *n) {
         switch (exit_code)
         {
         case NOT_DECLARED:
-            fprintf(stderr, "Error: x is not defined\n");
+            fprintf(stderr, "Error: %s is not defined\n", n->var);
             exit(EXIT_FAILURE);
         case TYPE_MISMATCH:
             type_error(n, "Type Mismatch");
@@ -130,9 +130,9 @@ DataTypes_t check_expr(ASTNode_t *n) {
             type_error(n, "Type mismatch in assignment");
         }
 
+        //if(!declare(n->assign.lhs->var, n->assign.lhs->datatype)) type_error(n, "Redeclaration of variable");
         printf("assign lhs=%d rhs=%d node=%d\n", lhs_t, rhs_t, n->datatype);
         n->datatype = lhs_t;
-        declare(n->assign.lhs->var, n->assign.lhs->datatype);
         return lhs_t;
     }
 
