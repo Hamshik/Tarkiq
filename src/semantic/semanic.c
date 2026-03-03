@@ -62,6 +62,7 @@ DataTypes_t check_expr(ASTNode_t *n) {
         return STRINGS;
 
     case AST_VAR:
+        if(n->datatype == UNKNOWN) n->datatype = lookup(n->var);
         exit_code = exists(n->var, n->datatype);
         switch (exit_code)
         {
@@ -73,7 +74,6 @@ DataTypes_t check_expr(ASTNode_t *n) {
         case SUCCESS:
         default: break;
         }
-        if(n->datatype == UNKNOWN) n->datatype = lookup(n->var);
         return n->datatype;
 
     case AST_BINOP: {
@@ -116,24 +116,31 @@ DataTypes_t check_expr(ASTNode_t *n) {
     }
 
     case AST_ASSIGN: {
-        if (n->assign.lhs->kind != AST_VAR) {
-            type_error(n, "Left side of assignment must be a variable");
+        if (n->assign.lhs->kind != AST_VAR) type_error(n, "Only Variable can be assigned");
+
+        DataTypes_t lhs_t;
+
+        if (n->datatype != UNKNOWN) {
+            // declaration: int i = ...
+            lhs_t = n->datatype;
+            n->assign.lhs->datatype = lhs_t;
+
+            if (!declare(n->assign.lhs->var, lhs_t))
+                type_error(n, "Redeclaration of variable");
+        } else {
+            // reassignment: i = ...
+            lhs_t = lookup(n->assign.lhs->var);
+            if (lhs_t == UNKNOWN)
+                type_error(n, "Variable not declared");
+
+            n->assign.lhs->datatype = lhs_t;
+            n->datatype = lhs_t;
         }
 
-        if (n->datatype != UNKNOWN && n->assign.lhs->datatype == UNKNOWN) n->assign.lhs->datatype = n->datatype;
-        else if (n->datatype == UNKNOWN && n->assign.lhs->datatype != UNKNOWN) n->datatype = n->assign.lhs->datatype;
-        
-        DataTypes_t lhs_t = n->assign.lhs->datatype;
         force_numeric_type(n->assign.rhs, lhs_t);
         DataTypes_t rhs_t = check_expr(n->assign.rhs);
 
-        if (lhs_t != rhs_t) {
-            type_error(n, "Type mismatch in assignment");
-        }
-
-        //if(!declare(n->assign.lhs->var, n->assign.lhs->datatype)) type_error(n, "Redeclaration of variable");
-        printf("assign lhs=%d rhs=%d node=%d\n", lhs_t, rhs_t, n->datatype);
-        n->datatype = lhs_t;
+        if (lhs_t != rhs_t) type_error(n, "Type mismatch in assignment");
         return lhs_t;
     }
 

@@ -8,10 +8,7 @@ int main() {
     yyparse();
     if (root != NULL) {
         semantic_check(root);
-
-        Value r = ast_eval(root);
-        printf("Program result: %g\n", r.lfnum);
-        ast_free(root);
+        ast_eval(root);
     }
     return 0;
 }

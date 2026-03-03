@@ -5,6 +5,8 @@
 #include <limits.h>
 #include <string.h>
 #include "../ast/ASTNode.h"
+#include "../utils/value_printer.h"
+#include "eval.h"
 
 OP_kind_t get_assign_op(OP_kind_t op) {
     switch (op) {
@@ -24,75 +26,22 @@ OP_kind_t get_assign_op(OP_kind_t op) {
 }
 
 Value eval_binop_int(OP_kind_t op, bool isShort, int a, int b) {
-    if(isShort) {
-        if(a < SHRT_MIN || a > SHRT_MAX || b < SHRT_MIN || b > SHRT_MAX) {
-            fprintf(stderr, "Error: integer overflow in short operation\n");
-            exit(EXIT_FAILURE);
-        }
-        a = (short)a;
-        b = (short)b;
+    if (isShort) {
+        CHECK_INT_ZERO(op, b);
+        switch (op) { INT_CASES(shnum, (short)a, (short)b); default: DIE("Invalid short binary op"); }
     }
-    switch (op) {
-        case OP_ADD: return (Value){.inum = a + b};
-        case OP_SUB: return (Value){.inum = a - b};
-        case OP_MUL: return (Value){.inum = a * b};
-        case OP_DIV:
-            if (b == 0) { fprintf(stderr, "division by zero\n"); exit(1); }
-            return (Value){.inum = a / b};
-        case OP_MOD:
-            if (b == 0) { fprintf(stderr, "mod by zero\n"); exit(1); }
-            return (Value){.inum = a % b};
-        case OP_LSHIFT: return (Value){.inum = a << b};
-        case OP_RSHIFT: return (Value){.inum = a >> b};
-        case OP_BITAND: return (Value){.inum = a & b};
-        case OP_BITOR:  return (Value){.inum = a | b};
-        case OP_BITXOR: return (Value){.inum = a ^ b};
-        default:
-            fprintf(stderr, "Invalid int binary operator\n");
-            exit(EXIT_FAILURE);
-    }
+    CHECK_INT_ZERO(op, b);
+    switch (op) { INT_CASES(inum, a, b); default: DIE("Invalid int binary op"); }
 }
 
 Value eval_binop_float(OP_kind_t op, float a, float b) {
-    if(fabsf(a) > FLT_MAX || fabsf(b) > FLT_MAX) {
-        fprintf(stderr, "Error: float overflow in binary operation\n");
-        exit(EXIT_FAILURE);
-    }
-
-    switch (op) {
-        case OP_ADD: return (Value){.fnum = a + b};
-        case OP_SUB: return (Value){.fnum = a - b};
-        case OP_MUL: return (Value){.fnum = a * b};
-        case OP_DIV:
-            if (fabsf(b) < 1e-12f) { fprintf(stderr, "division by zero\n"); exit(1); }
-            return (Value){.fnum = a / b};
-        case OP_POW: return (Value){.fnum = powf(a, b)};
-        case OP_MOD: return (Value){.fnum = fmodf(a, b)};
-        default:
-            fprintf(stderr, "Invalid float binary operator\n");
-            exit(EXIT_FAILURE);
-    }
+    if (op == OP_DIV && fabsf(b) < 1e-12f) DIE("division by zero");
+    switch (op) { FP_CASES(fnum, a, b, powf, fmodf); default: DIE("Invalid float binary op"); }
 }
 
 Value eval_binop_double(OP_kind_t op, double a, double b) {
-    if(fabs(a) > DBL_MAX || fabs(b) > DBL_MAX) {
-        fprintf(stderr, "Error: double overflow in binary operation\n");
-        exit(EXIT_FAILURE);
-    }
-
-    switch (op) {
-        case OP_ADD: return (Value){.lfnum = a + b};
-        case OP_SUB: return (Value){.lfnum = a - b};
-        case OP_MUL: return (Value){.lfnum = a * b};
-        case OP_DIV:
-            if (fabs(b) < 1e-12) { fprintf(stderr, "division by zero\n"); exit(1); }
-            return (Value){.lfnum = a / b};
-        case OP_POW: return (Value){.lfnum = pow(a, b)};
-        case OP_MOD: return (Value){.lfnum = fmod(a, b)};
-        default:
-            fprintf(stderr, "Invalid double binary operator\n");
-            exit(EXIT_FAILURE);
-    }
+    if (op == OP_DIV && fabs(b) < 1e-12) DIE("division by zero");
+    switch (op) { FP_CASES(lfnum, a, b, pow, fmod); default: DIE("Invalid double binary op"); }
 }
 
 void do_unop_operation(Value *result, Value *operand,DataTypes_t datatype,OP_kind_t op) {
@@ -104,6 +53,8 @@ void do_unop_operation(Value *result, Value *operand,DataTypes_t datatype,OP_kin
             case OP_NEG: result->shnum = -operand->shnum; break;
             case OP_POS: result->shnum = operand->shnum; break;
             case OP_BITNOT: result->shnum = ~((int)operand->shnum); break;
+            case OP_INC: result->shnum = ((int)operand->shnum)+1; break;
+            case OP_DEC: result->shnum = ((int)operand->shnum)-1; break;
             default:
                 fprintf(stderr, "Invalid short unary operator\n");
                 exit(EXIT_FAILURE);
@@ -114,6 +65,8 @@ void do_unop_operation(Value *result, Value *operand,DataTypes_t datatype,OP_kin
             case OP_NEG: result->inum = -operand->inum; break;
             case OP_POS: result->inum = operand->inum; break;
             case OP_BITNOT: result->inum = ~((int)operand->inum); break;
+            case OP_INC: result->shnum = ((int)operand->shnum)+1; break;
+            case OP_DEC: result->shnum = ((int)operand->shnum)-1; break;
             default:
                 fprintf(stderr, "Invalid int unary operator\n");
                 exit(EXIT_FAILURE);
@@ -123,6 +76,8 @@ void do_unop_operation(Value *result, Value *operand,DataTypes_t datatype,OP_kin
         switch (op) {
             case OP_NEG: result->fnum = -operand->fnum; break;
             case OP_POS: result->fnum = operand->fnum; break;
+            case OP_INC: result->shnum = ((int)operand->shnum)+1; break;
+            case OP_DEC: result->shnum = ((int)operand->shnum)-1; break;
             default:
                 fprintf(stderr, "Invalid float unary operator\n");
                 exit(EXIT_FAILURE);
@@ -132,6 +87,8 @@ void do_unop_operation(Value *result, Value *operand,DataTypes_t datatype,OP_kin
         switch (op) {
             case OP_NEG: result->lfnum = -operand->lfnum; break;
             case OP_POS: result->lfnum = operand->lfnum; break;
+            case OP_INC: result->shnum = ((int)operand->shnum)+1; break;
+            case OP_DEC: result->shnum = ((int)operand->shnum)-1; break;
             default:
                 fprintf(stderr, "Invalid double unary operator\n");
                 exit(EXIT_FAILURE);
@@ -149,31 +106,39 @@ void do_unop_operation(Value *result, Value *operand,DataTypes_t datatype,OP_kin
         fprintf(stderr, "Invalid datatype for unary operation\n");
         exit(EXIT_FAILURE);
     }
+    print_value(*result, datatype);
 }
 
 Value eval_bool(OP_kind_t op, bool a, bool b) {
     switch (op) {
         case OP_AND: return (Value){.bval = a && b};
         case OP_OR:  return (Value){.bval = a || b};
+        case OP_EQ: return (Value){.bval = (a) == (b)};\
+        case OP_NEQ: return (Value){.bval = (a) != (b)};\
+        case OP_GT: return (Value){.bval = (a) > (b)};\
+        case OP_LT: return (Value){.bval = (a) < (b)};\
+        case OP_GE: return (Value){.bval = (a) >= (b)};\
+        case OP_LE: return (Value){.bval = (a) <= (b)};
         default:
             fprintf(stderr, "Invalid boolean operator\n");
             exit(EXIT_FAILURE);
     }
 }
 
-void do_operation_str(char **result, const char* a, const char* b, OP_kind_t op) {
+char* do_operation_str(const char* a, const char* b, OP_kind_t op) {
+    char *result = NULL;
     size_t size = strlen(a) + strlen(b) + 1;
     switch (op)
     {
     case OP_ADD:
-        *result = malloc(size);
-        if(*result == NULL) fprintf(stderr, "Memory allocation is failed for string catination");
-        sprintf(*result, "%s%s", a, b);  // automatically adds null terminator
+        result = malloc(size);
+        if(result == NULL) fprintf(stderr, "Memory allocation is failed for string catination");
+        sprintf(result, "%s%s", a, b);  // automatically adds null terminator
         break;
-    
     default:
         break;
     }
+    return result;
 }
 
 Value ast_eval(ASTNode_t *node) {
@@ -185,28 +150,27 @@ Value ast_eval(ASTNode_t *node) {
     case AST_NUM:
         switch (node->datatype) {
             case INT:
-                v.inum = (int)strtol(node->literal.raw, NULL, 10);
-                return v;
+                v.inum = (int)strtol(node->literal.raw, NULL, 10); break;
             case SHORT:
-                v.shnum = (short)strtol(node->literal.raw, NULL, 10);
-                return v;
+                v.shnum = (short)strtol(node->literal.raw, NULL, 10); break;
             case FLOAT:
-                v.fnum = strtof(node->literal.raw, NULL);
-                return v;
+                v.fnum = strtof(node->literal.raw, NULL); break;
             case DOUBLE:
-                v.lfnum = strtod(node->literal.raw, NULL);
-                return v;
+                v.lfnum = strtod(node->literal.raw, NULL); break;
             default:
                 fprintf(stderr, "Error: unsupported numeric literal type\n");
                 exit(EXIT_FAILURE);
         }
+        return v;
 
     case AST_STR:
         v.str = node->literal.raw;
+        print_value(v, node->datatype);
         return v;
 
     case AST_CHAR:
         v.characters = node->literal.raw ? node->literal.raw[0] : '\0';
+        print_value(v, node->datatype);
         return v;
 
     case AST_VAR: return getvar(node->var, node->datatype, node->line, node->col);
@@ -216,15 +180,19 @@ Value ast_eval(ASTNode_t *node) {
         Value r = ast_eval(node->bin.right);
 
         switch (node->datatype) {
-            case INT: return eval_binop_int(node->bin.op, false, l.inum, r.inum);
-            case FLOAT: return eval_binop_float(node->bin.op, l.fnum, r.fnum);
-            case DOUBLE: return eval_binop_double(node->bin.op, l.lfnum, r.lfnum);
-            case SHORT: return eval_binop_int(node->bin.op, true, l.shnum, r.shnum);
+            case INT: v = eval_binop_int(node->bin.op, false, l.inum, r.inum); break;
+            case FLOAT: v = eval_binop_float(node->bin.op, l.fnum, r.fnum); break;
+            case DOUBLE: v = eval_binop_double(node->bin.op, l.lfnum, r.lfnum); break;
+            case SHORT: v = eval_binop_int(node->bin.op, true, l.shnum, r.shnum); break;
+            case STRINGS: v = (Value){.str = do_operation_str(l.str, r.str, node->bin.op)}; break;
             default:
-                fprintf(stderr, "Error: unsupported data type for binary operation\n");
+                fprintf(stderr, "Error: unsupported data type for binary Datatypes\n");
                 exit(EXIT_FAILURE);
         }
+        print_value(v, node->datatype);
+        return v;
     }
+
     case AST_UNOP: {
         Value r = ast_eval(node->unop.operand);
         do_unop_operation(&v, &r , node->datatype, node->unop.op);
@@ -238,17 +206,13 @@ Value ast_eval(ASTNode_t *node) {
                                 node->datatype,
                                 node->line,
                                 node->col);
-
-        // 💥 IMPORTANT: rhs is no longer needed
-        ast_free(node->assign.rhs);
-        node->assign.rhs = NULL;
-
         return val;
     }
 
-    case AST_SEQ:
+    case AST_SEQ: {
         ast_eval(node->seq.a);
         return ast_eval(node->seq.b);
+    }
 
     case NODE_IF:
         if (ast_eval(node->ifnode.cond).bval)

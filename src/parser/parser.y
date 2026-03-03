@@ -1,6 +1,7 @@
 %code requires {
     #include <stdio.h>
     #include <stdlib.h>
+    #include "../utils/token_printer.h"
     #include "../ast/ASTNode.h"
     extern ASTNode_t *root;
 }
@@ -67,7 +68,7 @@ program
 
 stmt_list
     : stmt                      { $$ = $1; }
-    | stmt_list stmt            { $$ = new_seq($1, $2); }
+    | stmt stmt_list            { $$ = new_seq($1, $2); }
     ;
 
 stmt
@@ -81,9 +82,9 @@ block
     ;
 
 if_stmt
-    : IF LPAREN expr RPAREN stmt %prec LOWER_THAN_ELSE
+    : IF LBRACE expr RBRACE stmt %prec LOWER_THAN_ELSE
         { $$ = new_if($3, $5, NULL, @1.first_line, @1.first_column); }
-    | IF LPAREN expr RPAREN stmt ELSE stmt
+    | IF LBRACE expr RBRACE stmt ELSE stmt
         { $$ = new_if($3, $5, $7, @1.first_line, @1.first_column); }
     ;
 

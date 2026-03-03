@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "ASTNode.h"
 #include "../eval/eval.h"
+#include "../utils/value_printer.h"
 
 void assign_value(DataTypes_t dt, Value *dst, Value src) {
     switch (dt) {
@@ -42,22 +43,22 @@ Value eval_assign(ASTNode_t *lhs, ASTNode_t *rhs, OP_kind_t op, DataTypes_t data
     OP_kind_t operation = get_assign_op(op);
     switch (datatypes) {
         case INT:
-            v = eval_binop_int(operation, false, r.inum, cur.inum);
+            v = eval_binop_int(operation, false, cur.inum, r.inum);
             break;
         case FLOAT:
-            v = eval_binop_float(operation, r.fnum, cur.fnum);
+            v = eval_binop_float(operation, cur.fnum, r.fnum);
             break;
         case DOUBLE:
-            v = eval_binop_double(operation, r.lfnum, cur.lfnum);
+            v = eval_binop_double(operation, cur.lfnum, r.lfnum);
             break;
         case SHORT:
-            v = eval_binop_int(operation, true, r.shnum, cur.shnum);
+            v = eval_binop_int(operation, true, cur.shnum, r.shnum);
             break;
         case BOOL:
             v = eval_bool(operation, r.bval, cur.bval);
             break;
         case STRINGS:
-            do_operation_str(&v.str, r.str, cur.str, operation);
+            v = (Value){.str = do_operation_str(r.str, cur.str, operation)};
             break;
         case CHARACTER:
             v.characters = r.characters;
@@ -67,5 +68,6 @@ Value eval_assign(ASTNode_t *lhs, ASTNode_t *rhs, OP_kind_t op, DataTypes_t data
             exit(EXIT_FAILURE);
     }
     set_var(lhs->var, &v, datatypes);
+    print_value(v, datatypes);
     return v;
 }

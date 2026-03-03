@@ -1,6 +1,9 @@
 %option noyywrap
 %option bison-bridge
 %option bison-locations
+%option noinput
+%option nounput
+
 %{
 #include "../parser/parser.h"
 #include "../ast/ASTNode.h"
@@ -10,15 +13,27 @@
 %%
 "//".*               { /* skip single-line comments */ }
 "/*"([^*]|\*+[^*/])*\*+"/"   { /* skip multi-line comments */ }
-\"([^"\\\n]|\\.)*\" {yylval->node = new_str(yytext, yylloc->first_line, yylloc->first_column); return STRING_LITERAL;}  
+\"([^"\\\n]|\\.)*\" {
+    size_t n = yyleng;
+    char *s = malloc(n - 1);          // remove 2 quotes + keep '\0'
+    if (!s) exit(1);
+    memcpy(s, yytext + 1, n - 2);
+    s[n - 2] = '\0';
+
+    yylval->node = new_str(s, yylloc->first_line, yylloc->first_column);
+    free(s);
+    return STRING_LITERAL;
+}
 [ \t\r\n]+          { /* skip */ }
 if                  { return IF; }
 else                { return ELSE; }
 int                 { yylval->datatype = INT; return DATATYPES; }
 short               { yylval->datatype = SHORT; return DATATYPES; }
-float               { yylval->datatype = FLOAT; return DATATYPES; }
-double              { yylval->datatype = DOUBLE; return DATATYPES; }
-string              { yylval->datatype = STRINGS; return DATATYPES; }
+real32              { yylval->datatype = FLOAT; return DATATYPES; }
+real64              { yylval->datatype = DOUBLE; return DATATYPES; }
+str                 { yylval->datatype = STRINGS; return DATATYPES; }
+char                { yylval->datatype = CHARACTER; return DATATYPES;}
+logic               { yylval->datatype = BOOL; return DATATYPES;}
 [0-9]+(\.[0-9]+)? {
     yylval->node = new_num(yytext, UNKNOWN, yylloc->first_line, yylloc->first_column);
     return NUMBER;

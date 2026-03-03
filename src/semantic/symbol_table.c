@@ -10,7 +10,7 @@ DataTypes_t lookup(const char* name){
     Symboltable_t *v;
     HASH_FIND_STR(envs, name, v);
     if (v != NULL) return v->type;
-    printf("Warning: in func lookup the dataype of var %s is UNKNOWN", name); 
+    printf("Warning: in func lookup the dataype of var %s is UNKNOWN\n", name); 
     return UNKNOWN;
 }
 

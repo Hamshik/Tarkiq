@@ -49,10 +49,11 @@ extern int yydebug;
 
     #include <stdio.h>
     #include <stdlib.h>
+    #include "../utils/token_printer.h"
     #include "../ast/ASTNode.h"
     extern ASTNode_t *root;
 
-#line 56 "src/parser/parser.h"
+#line 57 "src/parser/parser.h"
 
 /* Token kinds.  */
 #ifndef YYTOKENTYPE
@@ -118,12 +119,12 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 17 "src/parser/parser.y"
+#line 18 "src/parser/parser.y"
 
     ASTNode_t *node;
     DataTypes_t datatype;
 
-#line 127 "src/parser/parser.h"
+#line 128 "src/parser/parser.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
