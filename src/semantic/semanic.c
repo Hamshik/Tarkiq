@@ -70,8 +70,10 @@ DataTypes_t check_expr(ASTNode_t *n) {
             exit(EXIT_FAILURE);
         case TYPE_MISMATCH:
             type_error(n, "Type Mismatch");
+        case SUCCESS:
         default: break;
         }
+        if(n->datatype == UNKNOWN) n->datatype = lookup(n->var);
         return n->datatype;
 
     case AST_BINOP: {
@@ -118,10 +120,9 @@ DataTypes_t check_expr(ASTNode_t *n) {
             type_error(n, "Left side of assignment must be a variable");
         }
 
-        if (n->datatype != UNKNOWN && n->assign.lhs->datatype == UNKNOWN) {
-            n->assign.lhs->datatype = n->datatype;
-        }
-
+        if (n->datatype != UNKNOWN && n->assign.lhs->datatype == UNKNOWN) n->assign.lhs->datatype = n->datatype;
+        else if (n->datatype == UNKNOWN && n->assign.lhs->datatype != UNKNOWN) n->datatype = n->assign.lhs->datatype;
+        
         DataTypes_t lhs_t = n->assign.lhs->datatype;
         force_numeric_type(n->assign.rhs, lhs_t);
         DataTypes_t rhs_t = check_expr(n->assign.rhs);
