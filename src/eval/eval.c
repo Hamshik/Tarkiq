@@ -202,7 +202,7 @@ TypedValue ast_eval(ASTNode_t *node) {
                 if(node->kind == AST_BOOL) node->datatype = BOOL;
                 break;
             case DOUBLE:
-                v = eval_binop_double(node->bin.op, l.lfnum, r.lfnum);
+                vUpdated = eval_binop_double(node->bin.op, l.lfnum, r.lfnum);
                 if(node->kind == AST_BOOL) node->datatype = BOOL;
                 break;
             case SHORT:
