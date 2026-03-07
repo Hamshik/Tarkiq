@@ -12,6 +12,7 @@ typedef enum ASTKind {
     AST_ASSIGN,
     AST_SEQ,
     NODE_IF,
+    NODE_FOR,
     AST_STR,
     AST_CHAR,
     AST_BOOL
@@ -50,10 +51,14 @@ typedef union {
     char characters;
     char* str;
 } Value;
+
+typedef struct {
+    DataTypes_t type;
+    Value val;
+} TypedValue;
 typedef struct {
     char *name;
-    Value val;
-    DataTypes_t datatype;
+    TypedValue typedval;
     UT_hash_handle hh;
 } VarEntry;
 
@@ -89,13 +94,12 @@ typedef struct ASTNode {
         struct {
             struct ASTNode *cond, *then_branch, *else_branch;
         } ifnode;
+
+        struct {
+            struct ASTNode *init, *end, *step, *body;
+        } fornode;
     };
 } ASTNode_t;
-
-typedef struct {
-    DataTypes_t type;
-    Value val;
-} TypedValue;
 
 /* Constructors */
 ASTNode_t *new_num(char *rawval, DataTypes_t datatype, int line, int col);
@@ -105,6 +109,7 @@ ASTNode_t *new_binop(ASTNode_t *l, ASTNode_t *r, int line, int col, OP_kind_t op
 ASTNode_t *new_unop(ASTNode_t *e, int line, int col, OP_kind_t op);
 ASTNode_t *new_assign(ASTNode_t *lhs, ASTNode_t *rhs, DataTypes_t datatype, int line, int col,OP_kind_t op);
 ASTNode_t *new_if(ASTNode_t *cond, ASTNode_t *thenB, ASTNode_t *elseB, int line, int col);
+ASTNode_t *new_for(ASTNode_t *init, ASTNode_t *end, ASTNode_t *step, ASTNode_t *body, int line, int col);
 ASTNode_t *new_seq(ASTNode_t *a, ASTNode_t *b);
 
 /* Eval + memory */

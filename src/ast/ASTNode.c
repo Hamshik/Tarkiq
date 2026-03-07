@@ -90,3 +90,15 @@ ASTNode_t* new_if(ASTNode_t *cond, ASTNode_t *thenB, ASTNode_t *elseB, int line,
     node->col = col;
     return node;
 }
+
+ASTNode_t* new_for(ASTNode_t *init, ASTNode_t *end, ASTNode_t *step, ASTNode_t *body, int line, int col) {
+    ASTNode_t *node = ast_alloc();
+    node->kind = NODE_FOR;
+    node->fornode.init = init;
+    node->fornode.end = end;
+    node->fornode.step = step;
+    node->fornode.body = body;
+    node->line = line;
+    node->col = col;
+    return node;
+}

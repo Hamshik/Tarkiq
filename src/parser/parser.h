@@ -77,8 +77,8 @@ extern int yydebug;
     DEC = 268,                     /* DEC  */
     LSHIFT = 269,                  /* LSHIFT  */
     RSHIFT = 270,                  /* RSHIFT  */
-    BITAND = 271,                  /* BITAND  */
-    BITOR = 272,                   /* BITOR  */
+    AMP = 271,                     /* AMP  */
+    PIPE = 272,                    /* PIPE  */
     BITXOR = 273,                  /* BITXOR  */
     BITNOT = 274,                  /* BITNOT  */
     LPAREN = 275,                  /* LPAREN  */
@@ -109,11 +109,13 @@ extern int yydebug;
     GE = 300,                      /* GE  */
     IF = 301,                      /* IF  */
     ELSE = 302,                    /* ELSE  */
-    DATATYPES = 303,               /* DATATYPES  */
-    UPLUS = 304,                   /* UPLUS  */
-    UMINUS = 305,                  /* UMINUS  */
-    POSTFIX = 306,                 /* POSTFIX  */
-    LOWER_THAN_ELSE = 307          /* LOWER_THAN_ELSE  */
+    FOR = 303,                     /* FOR  */
+    LOOP = 304,                    /* LOOP  */
+    DATATYPES = 305,               /* DATATYPES  */
+    UPLUS = 306,                   /* UPLUS  */
+    UMINUS = 307,                  /* UMINUS  */
+    POSTFIX = 308,                 /* POSTFIX  */
+    LOWER_THAN_ELSE = 309          /* LOWER_THAN_ELSE  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -127,7 +129,7 @@ union YYSTYPE
     ASTNode_t *node;
     DataTypes_t datatype;
 
-#line 131 "src/parser/parser.h"
+#line 133 "src/parser/parser.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

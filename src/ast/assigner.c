@@ -31,7 +31,7 @@ Value eval_assign(ASTNode_t *lhs, ASTNode_t *rhs, OP_kind_t op, DataTypes_t data
 		exit(-1);
     }
 
-    Value r = ast_eval(rhs);
+    Value r = ast_eval(rhs).val;
     Value v = {0};
 
     if (op == OP_ASSIGN) {
@@ -55,7 +55,7 @@ Value eval_assign(ASTNode_t *lhs, ASTNode_t *rhs, OP_kind_t op, DataTypes_t data
             v = eval_binop_int(operation, true, cur.shnum, r.shnum);
             break;
         case BOOL:
-            v = eval_bool(operation, r.bval, cur.bval);
+            v = eval_bool(operation, BOOL ,r, cur);
             break;
         case STRINGS:
             v = (Value){.str = do_operation_str(r.str, cur.str, operation)};

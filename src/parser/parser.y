@@ -31,22 +31,22 @@
 %token PLUS MINUS STAR SLASH MOD POWER
 %token INC DEC
 %token LSHIFT RSHIFT
-%token BITAND BITOR BITXOR BITNOT
+%token AMP PIPE BITXOR BITNOT
 %token LPAREN RPAREN LBRACE RBRACE SEMICOLON LSQUARE RSQUARE
 %token ASSIGN PLUS_ASSIGN MINUS_ASSIGN STAR_ASSIGN SLASH_ASSIGN MOD_ASSIGN POWER_ASSIGN
 %token LSHIFT_ASSIGN RSHIFT_ASSIGN COLON
 %token AND OR NOT EQ NEQ LT LE GT GE
-%token IF ELSE
+%token IF ELSE FOR LOOP
 
-%type <node> program stmt_list stmt block if_stmt expr assignment
+%type <node> program stmt_list stmt block if_stmt for_stmt expr assignment
 %token <datatype> DATATYPES
 
 %right ASSIGN PLUS_ASSIGN MINUS_ASSIGN STAR_ASSIGN SLASH_ASSIGN MOD_ASSIGN POWER_ASSIGN LSHIFT_ASSIGN RSHIFT_ASSIGN
 %left OR
 %left AND
-%left BITOR
+%left PIPE
 %left BITXOR
-%left BITAND
+%left AMP
 %left EQ NEQ
 %left LT LE GT GE
 %left LSHIFT RSHIFT
@@ -74,6 +74,7 @@ stmt_list
 stmt
     : expr SEMICOLON            { $$ = $1; }
     | if_stmt                   { $$ = $1; }
+    | for_stmt                  { $$ = $1; }
     | block                     { $$ = $1; }
     ;
 
@@ -86,6 +87,13 @@ if_stmt
         { $$ = new_if($3, $5, NULL, @1.first_line, @1.first_column); }
     | IF LBRACE expr RBRACE stmt ELSE stmt
         { $$ = new_if($3, $5, $7, @1.first_line, @1.first_column); }
+    ;
+
+for_stmt
+    : LOOP FOR LPAREN assignment COLON expr RPAREN stmt
+        { $$ = new_for($4, $6, NULL, $8, @1.first_line, @1.first_column); }
+    | LOOP FOR LPAREN assignment COLON expr COLON expr RPAREN stmt
+        { $$ = new_for($4, $6, $8, $10, @1.first_line, @1.first_column); }
     ;
 
 expr
@@ -103,9 +111,9 @@ expr
     | expr LSHIFT expr          { $$ = new_binop($1, $3, @$.first_line, @$.first_column, OP_LSHIFT); }
     | expr RSHIFT expr          { $$ = new_binop($1, $3, @$.first_line, @$.first_column, OP_RSHIFT); }
 
-    | expr BITAND expr          { $$ = new_binop($1, $3, @$.first_line, @$.first_column, OP_BITAND); }
+    | expr AMP expr          { $$ = new_binop($1, $3, @$.first_line, @$.first_column, OP_BITAND); }
     | expr BITXOR expr          { $$ = new_binop($1, $3, @$.first_line, @$.first_column, OP_BITXOR); }
-    | expr BITOR expr           { $$ = new_binop($1, $3, @$.first_line, @$.first_column, OP_BITOR); }
+    | expr PIPE expr           { $$ = new_binop($1, $3, @$.first_line, @$.first_column, OP_BITOR); }
 
     | expr AND expr             { $$ = new_binop($1, $3, @$.first_line, @$.first_column, OP_AND); }
     | expr OR expr              { $$ = new_binop($1, $3, @$.first_line, @$.first_column, OP_OR); }

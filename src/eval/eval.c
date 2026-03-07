@@ -122,16 +122,35 @@ void do_unop_operation(Value *result, Value *operand,DataTypes_t datatype,OP_kin
         fprintf(stderr, "Invalid datatype for unary operation\n");
         exit(EXIT_FAILURE);
     }
+    printf("Result of unary operation: ");
     print_value(*result, datatype);
 }
 
-Value eval_bool(OP_kind_t op,bool a, bool b) {
-    switch (op) {
-        case OP_AND: return (Value){.bval = a && b};
-        case OP_OR:  return (Value){.bval = a || b};
-        default: break;
+Value eval_bool(OP_kind_t op, DataTypes_t type, Value a, Value b) {
+    switch(type) {
+        case BOOL:
+            switch (op) {
+                case OP_AND: return (Value){.bval = a.bval && b.bval};
+                case OP_OR:  return (Value){.bval = a.bval || b.bval};
+                default: fprintf(stderr, "Invalid boolean operator\n"); exit(1); break;
+            }
+            break;
+        case INT:
+            switch (op){INT_CASES(inum, a.inum, b.inum); default: fprintf(stderr, "Invalid integer operator\n"); exit(1);}
+            break;
+        case SHORT:
+            switch (op){INT_CASES(shnum, a.shnum, b.shnum); default: fprintf(stderr, "Invalid integer operator\n"); exit(1);}
+            break;
+        case FLOAT:
+            switch (op){FP_CASES(fnum, a.fnum, b.fnum, powf, fmodf); default: fprintf(stderr, "Invalid float operator\n"); exit(1);}
+            break;
+        case DOUBLE:
+            switch (op){FP_CASES(lfnum, a.lfnum, b.lfnum, pow, fmod); default: fprintf(stderr, "Invalid double operator\n"); exit(1);}
+            break;
+        default:
+            fprintf(stderr, "Invalid datatype for boolean operation\n");
+            exit(EXIT_FAILURE);
     }
-    
 }
 
 char* do_operation_str(const char* a, const char* b, OP_kind_t op) {
@@ -148,6 +167,74 @@ char* do_operation_str(const char* a, const char* b, OP_kind_t op) {
         break;
     }
     return result;
+}
+
+static Value default_step(DataTypes_t type) {
+    Value step = {0};
+    switch (type) {
+        case INT: step.inum = 1; break;
+        case SHORT: step.shnum = 1; break;
+        case FLOAT: step.fnum = 1.0f; break;
+        case DOUBLE: step.lfnum = 1.0; break;
+        default:
+            fprintf(stderr, "for loop supports numeric init types only\n");
+            exit(EXIT_FAILURE);
+    }
+    return step;
+}
+
+static int step_is_positive(DataTypes_t type, Value step) {
+    switch (type) {
+        case INT: return step.inum > 0;
+        case SHORT: return step.shnum > 0;
+        case FLOAT: return step.fnum > 0;
+        case DOUBLE: return step.lfnum > 0;
+        default: return 0;
+    }
+}
+
+static int step_is_zero(DataTypes_t type, Value step) {
+    switch (type) {
+        case INT: return step.inum == 0;
+        case SHORT: return step.shnum == 0;
+        case FLOAT: return fabsf(step.fnum) < 1e-12f;
+        case DOUBLE: return fabs(step.lfnum) < 1e-12;
+        default: return 1;
+    }
+}
+
+static int should_continue_for(DataTypes_t type, Value cur, Value end, Value step) {
+    if (step_is_positive(type, step)) {
+        switch (type) {
+            case INT: return cur.inum < end.inum;
+            case SHORT: return cur.shnum < end.shnum;
+            case FLOAT: return cur.fnum < end.fnum;
+            case DOUBLE: return cur.lfnum < end.lfnum;
+            default: return 0;
+        }
+    }
+
+    switch (type) {
+        case INT: return cur.inum > end.inum;
+        case SHORT: return cur.shnum > end.shnum;
+        case FLOAT: return cur.fnum > end.fnum;
+        case DOUBLE: return cur.lfnum > end.lfnum;
+        default: return 0;
+    }
+}
+
+static Value add_step_for(DataTypes_t type, Value cur, Value step) {
+    Value next = cur;
+    switch (type) {
+        case INT: next.inum += step.inum; break;
+        case SHORT: next.shnum += step.shnum; break;
+        case FLOAT: next.fnum += step.fnum; break;
+        case DOUBLE: next.lfnum += step.lfnum; break;
+        default:
+            fprintf(stderr, "for loop supports numeric init types only\n");
+            exit(EXIT_FAILURE);
+    }
+    return next;
 }
 
 TypedValue ast_eval(ASTNode_t *node) {
@@ -191,37 +278,39 @@ TypedValue ast_eval(ASTNode_t *node) {
     case AST_BINOP: {
         TypedValue l = ast_eval(node->bin.left);
         TypedValue r = ast_eval(node->bin.right);
+        v.type = node->datatype;
 
         switch (node->datatype) {
             case INT:
-                v.val = eval_binop_int(node->bin.op, false, l.inum, r.inum);
-                if(node->kind == AST_BOOL) node->datatype = BOOL;
+                v.val = eval_binop_int(node->bin.op, false, l.val.inum, r.val.inum);
+                if(isBoolOP(node->bin.op)) node->datatype = BOOL;
                 break;
             case FLOAT:
-                v.val = eval_binop_float(node->bin.op, l.fnum, r.fnum);
-                if(node->kind == AST_BOOL) node->datatype = BOOL;
+                v.val = eval_binop_float(node->bin.op, l.val.fnum, r.val.fnum);
+                if(isBoolOP(node->bin.op)) node->datatype = BOOL;
                 break;
             case DOUBLE:
-                vUpdated = eval_binop_double(node->bin.op, l.lfnum, r.lfnum);
-                if(node->kind == AST_BOOL) node->datatype = BOOL;
+                v.val = eval_binop_double(node->bin.op, l.val.lfnum, r.val.lfnum);
+                if(isBoolOP(node->bin.op)) node->datatype = BOOL;
                 break;
             case SHORT:
-                v = eval_binop_int(node->bin.op, true, l.shnum, r.shnum);
-                if(node->kind == AST_BOOL) node->datatype = BOOL;
+                v.val = eval_binop_int(node->bin.op, true, l.val.shnum, r.val.shnum);
+                if(isBoolOP(node->bin.op)) node->datatype = BOOL;
                 break;
-            case STRINGS: v = (Value){.str = do_operation_str(l.str, r.str, node->bin.op)}; break;
-            case BOOL: v = eval_bool(node->bin.op ,l.bval, r.bval); break;
+            case STRINGS: v.val = (Value){.str = do_operation_str(l.val.str, r.val.str, node->bin.op)}; break;
+            case BOOL: v.val = eval_bool(node->bin.op, l.type , l.val, r.val); break;
             default:
                 fprintf(stderr, "Error: unsupported data type for binary Datatypes\n");
                 exit(EXIT_FAILURE);
         }
-        print_value(v, node->datatype);
+        print_value(v.val, node->datatype);
         return v;
     }
 
     case AST_UNOP: {
-        Value r = ast_eval(node->unop.operand);
-        do_unop_operation(&v, &r , node->datatype, node->unop.op);
+        TypedValue r = ast_eval(node->unop.operand);
+        do_unop_operation(&v.val, &r.val , node->datatype, node->unop.op);
+        set_var(node->unop.operand->var, &v.val, node->datatype);
         return v;
     }
 
@@ -232,7 +321,7 @@ TypedValue ast_eval(ASTNode_t *node) {
                                 node->datatype,
                                 node->line,
                                 node->col);
-        return val;
+        return (TypedValue){.val = val, .type = node->datatype};
     }
 
     case AST_SEQ: {
@@ -241,11 +330,43 @@ TypedValue ast_eval(ASTNode_t *node) {
     }
 
     case NODE_IF:
-        if (ast_eval(node->ifnode.cond).bval)
+        if (ast_eval(node->ifnode.cond).val.bval)
             return ast_eval(node->ifnode.then_branch);
         if (node->ifnode.else_branch)
             return ast_eval(node->ifnode.else_branch);
-        return (Value){0};
+        return (TypedValue){0};
+
+    case NODE_FOR: {
+        if (!node->fornode.init || node->fornode.init->kind != AST_ASSIGN ||
+            node->fornode.init->assign.lhs->kind != AST_VAR || node->fornode.init->assign.op != OP_ASSIGN) {
+            fprintf(stderr, "Invalid for loop init\n");
+            exit(EXIT_FAILURE);
+        }
+
+        ast_eval(node->fornode.init);
+        DataTypes_t loop_type = node->fornode.init->datatype;
+        const char *loop_name = node->fornode.init->assign.lhs->var;
+
+        Value endv = ast_eval(node->fornode.end).val;
+        Value stepv = node->fornode.step ? ast_eval(node->fornode.step).val : default_step(loop_type);
+
+        if (step_is_zero(loop_type, stepv)) {
+            fprintf(stderr, "for loop step cannot be zero\n");
+            exit(EXIT_FAILURE);
+        }
+
+        TypedValue last = {0};
+        
+        while (should_continue_for(loop_type, getvar(loop_name, loop_type, node->line, node->col), endv, stepv)) {
+            last = ast_eval(node->fornode.body);
+            Value cur = getvar(loop_name, loop_type, node->line, node->col);
+            Value next = add_step_for(loop_type, cur, stepv);
+            set_var(loop_name, &next, loop_type);
+        }
+
+        print_value(last.val, last.type);
+        return last;
+    }
 
     default:
         fprintf(stderr, "Error: unknown AST node\n");

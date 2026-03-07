@@ -46,9 +46,9 @@
 #include "../ast/ASTNode.h"
 
 
-Value ast_eval(ASTNode_t *node);
+TypedValue ast_eval(ASTNode_t *node);
 char* do_operation_str(const char* a, const char* b, OP_kind_t op);
-Value eval_bool(OP_kind_t op, bool a, bool b);
+Value eval_bool(OP_kind_t op, DataTypes_t type ,Value a, Value b);
 void do_unop_operation(Value *result, Value *operand,DataTypes_t datatype,OP_kind_t op);
 Value eval_binop_double(OP_kind_t op, double a, double b);
 Value eval_binop_float(OP_kind_t op, float a, float b);

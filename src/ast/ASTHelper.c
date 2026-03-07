@@ -45,6 +45,13 @@ void ast_free(ASTNode_t *n) {
             ast_free(n->ifnode.else_branch);
             break;
 
+        case NODE_FOR:
+            ast_free(n->fornode.init);
+            ast_free(n->fornode.end);
+            ast_free(n->fornode.step);
+            ast_free(n->fornode.body);
+            break;
+
         default:
             break;
     }

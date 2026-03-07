@@ -29,6 +29,8 @@
 
 if                  { return IF; }
 else                { return ELSE; }
+for                 { return FOR; }
+loop                { return LOOP; }
 int                 { yylval->datatype = INT; return DATATYPES; }
 short               { yylval->datatype = SHORT; return DATATYPES; }
 real32              { yylval->datatype = FLOAT; return DATATYPES; }
@@ -68,8 +70,8 @@ logic               { yylval->datatype = BOOL; return DATATYPES;}
 "&&"                { return AND; }
 "||"                { return OR; }
 "!"                 { return NOT; }
-"&"                 { return BITAND; }
-"|"                 { return BITOR; }
+"&"                 { return AMP; }
+"|"                 { return PIPE; }
 "^"                 { return BITXOR; }
 "~"                 { return BITNOT; }
 "=="                { return EQ; }

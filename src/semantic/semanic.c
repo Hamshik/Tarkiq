@@ -190,6 +190,35 @@ DataTypes_t check_expr(ASTNode_t *n) {
         return UNKNOWN;
     }
 
+    case NODE_FOR: {
+        if (!n->fornode.init || n->fornode.init->kind != AST_ASSIGN
+            || n->fornode.init->assign.lhs->kind != AST_VAR || n->fornode.init->assign.op != OP_ASSIGN) {
+            type_error(n, "for init must be an assignment/declaration");
+        }
+
+        DataTypes_t init_t = check_expr(n->fornode.init);
+        if (!is_numeric(init_t)) {
+            type_error(n, "for init variable must be numeric");
+        }
+
+        force_numeric_type(n->fornode.end, init_t);
+        DataTypes_t end_t = check_expr(n->fornode.end);
+        if (end_t != init_t) {
+            type_error(n, "for end value must match init type");
+        }
+
+        if (n->fornode.step) {
+            force_numeric_type(n->fornode.step, init_t);
+            DataTypes_t step_t = check_expr(n->fornode.step);
+            if (step_t != init_t) {
+                type_error(n, "for step value must match init type");
+            }
+        }
+
+        check_expr(n->fornode.body);
+        return UNKNOWN;
+    }
+
     default:
         type_error(n, "Unknown AST node in semantic analysis");
         return UNKNOWN;
