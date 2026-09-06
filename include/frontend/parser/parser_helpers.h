@@ -22,7 +22,6 @@ extern const char *g_last_parse_err_msg;
       (node)->loc = (loc);                                                     \
   } while (0)
 
-#define SA_error_LOC(loc, code, detail) panic((loc), (code), (detail))
 
 static inline SA_Location SA_loc_start(SA_Location loc) {
     loc.last_line = loc.first_line;

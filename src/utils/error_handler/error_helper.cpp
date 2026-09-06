@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include "Scanner.h"
 #include "frontend/lexer/keywords.h"
 #include "utils/colors.h"
 
@@ -20,7 +21,7 @@ static bool is_ident_continue(unsigned char c)
 
 static void print_keyword(const char *text, size_t len)
 {
-    const SA_Keyword *keyword = SA_find_keyword(text, len);
+    const SA_Keyword *keyword = Scanner::findKeyword(text, len);
     if (!keyword) {
         fwrite(text, 1, len, stderr);
         return;
@@ -33,7 +34,7 @@ static void print_keyword(const char *text, size_t len)
 
 static void print_identifier_or_call(const char *line, size_t start, size_t end, size_t len)
 {
-    if (SA_find_keyword(line + start, end - start)) {
+    if (Scanner::findKeyword(line + start, end - start)) {
         print_keyword(line + start, end - start);
         return;
     }

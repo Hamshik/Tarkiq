@@ -19,7 +19,11 @@
     ],
     "files.associations": {
         "*.yy": "bisonc++",
-        "*.l": "lex"
+        "*.l": "lex",
+        "**/frontend/parser/Parser.h": "cpp",
+        "**/frontend/parser/Parser.ih": "cpp",
+        "**/frontend/lexer/Scanner.h": "cpp",
+        "**/frontend/lexer/Scanner.ih": "cpp"
     },
     "bisonFlex.enableDiagnostics": false,
     "chat.tools.terminal.autoApprove": {

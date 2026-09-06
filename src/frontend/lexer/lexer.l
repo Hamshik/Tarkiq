@@ -1,5 +1,5 @@
 %filenames Scanner
-%baseclass-preinclude "frontend/lexer/lexer.h"
+%baseclass-preinclude "frontend/parser/Parser.h"
 
 %x COMMENT3
 
@@ -9,10 +9,7 @@
 [ \t\r\n]+                   { /* skip whitespace */ }
 
 "'''"                        {
-    SA_lexer_get_cursor(&lex_loc);
-    SA_comment_start_line = lex_loc.first_line;
-    SA_comment_start_col  = lex_loc.first_column;
-    SA_comment_start_pos  = lex_loc.first_pos;
+    setOpenDelimPos(*loc);
     begin(StartCondition_::COMMENT3);
 }
 <COMMENT3>"'''"               { begin(StartCondition_::INITIAL); }
@@ -20,15 +17,10 @@
 <COMMENT3>.                   { /* skip */ }
 <COMMENT3><<EOF>>             {
     panic(
-        (SA_Location){
-            (size_t)SA_comment_start_line,
-            (size_t)SA_comment_start_col,
-            (size_t)SA_comment_start_pos,
-            0,0,0
-        },
+        getCursor(),
         LEX_UNCLOSED_COMMENT,
         NULL);
-    SA_lexer_mark_error();
+    lexMarkErr();
     return 0;
 }
 
@@ -41,23 +33,23 @@
     int err_i = -1;
     const char *err_msg = NULL;
 
-    char *s = SA_unescape_string(inner, inner_len, &out_len, &err_i, &err_msg);
+    char *s = Scanner::unescapeStr(inner, inner_len, &out_len, &err_i, &err_msg);
     if (!s) {
         int off = (err_i >= 0) ? err_i : 0;
         panic(
             (SA_Location){
-                lex_loc.first_line,
-                lex_loc.first_column + 1 + off,
-                lex_loc.first_pos + 1 + off,
+                loc->first_line,
+                loc->first_column + 1 + off,
+                loc->first_pos + 1 + off,
                 0,0,0
             },
             LEX_INVALID_ESCAPE,
             err_msg);
-        SA_lexer_mark_error();
+        lexMarkErr();
         return Parser::LEX_ERROR;
     }
 
-    VAL(node, new_str(s, lex_loc));
+    VAL(node, new_str(s, *loc));
     free(s);
     return Parser::STRING_LITERAL;
 }
@@ -69,45 +61,45 @@
     int err_i = -1;
     const char *err_msg = NULL;
 
-    char *s = SA_unescape_string(inner, inner_len, &out_len, &err_i, &err_msg);
+    char *s = Scanner::unescapeStr(inner, inner_len, &out_len, &err_i, &err_msg);
     if (!s || out_len == 0) {
         int off = (err_i >= 0) ? err_i : 0;
         panic(
             (SA_Location){
-                lex_loc.first_line,
-                lex_loc.first_column + 1 + off,
-                lex_loc.first_pos + 1 + off,
+                loc->first_line,
+                loc->first_column + 1 + off,
+                loc->first_pos + 1 + off,
                 0,0,0
             },
             LEX_INVALID_ESCAPE,
             err_msg ? err_msg : "invalid character literal");
         free(s);
-        SA_lexer_mark_error();
+        lexMarkErr();
         return Parser::LEX_ERROR;
     }
 
-    VAL(node, new_char_bytes(s, out_len, lex_loc));
+    VAL(node, new_char_bytes(s, out_len, *loc));
     free(s);
     return Parser::CHAR_LITERAL;
 }
 
 #[a-zA-Z_][a-zA-Z0-9_]*     {
-    const SA_Keyword *keyword = SA_find_keyword(matched().c_str(), length());
+    const SA_Keyword *keyword = Scanner::findKeyword(matched().c_str(), length());
     if (keyword && keyword->kind == SA_KEYWORD_TOKEN) return keyword->token;
-    panic(lex_loc, LEX_UNKNOWN_CHAR, "unknown directive");
-    SA_lexer_mark_error();
+    panic(*loc, LEX_UNKNOWN_CHAR, "unknown directive");
+    lexMarkErr();
     return Parser::LEX_ERROR;
 }
 
 [0-9]+(\.[0-9]+)? {
-    VAL(node, new_num(matched().c_str(), UNKNOWN, lex_loc));
+    VAL(node, new_num(matched().c_str(), UNKNOWN, *loc));
     return Parser::NUMBER;
 }
 
 \.[0-9]+ {
     char* buffer = (char*)calloc(1, length() + 2);
     snprintf(buffer, length() + 2, "0%s", matched().c_str());
-    VAL(node, new_num(buffer, UNKNOWN, lex_loc));
+    VAL(node, new_num(buffer, UNKNOWN, *loc));
     free(buffer);
     return Parser::NUMBER;
 }
@@ -151,46 +143,44 @@
 ">="                { return Parser::GE; }
 "<"                 { return Parser::LT; }
 ">"                 { return Parser::GT; }
-"{"                 { SA_brace_depth++; return Parser::LBRACE; }
-"}"                 { if (SA_brace_depth > 0) SA_brace_depth--; return Parser::RBRACE; }
+"{"                 { return Parser::LBRACE; }
+"}"                 { return Parser::RBRACE; }
 ".."                { return Parser::DOT_DOT; }
 "..."               { return Parser::ELLIPSIS; }
 
 [@a-zA-Z_][a-zA-Z0-9_]*|[a-zA-Z_] {
-    const SA_Keyword *keyword = SA_find_keyword(matched().c_str(), length());
+    const SA_Keyword *keyword = Scanner::findKeyword(matched().c_str(), length());
     if (keyword) {
         if (keyword->kind == SA_KEYWORD_TOKEN) return keyword->token;
         if (keyword->kind == SA_KEYWORD_DATATYPE) {
             VAL(datatype, keyword->datatype);
             return keyword->token;
         }
-        VAL(node, new_bool(keyword->bool_value, lex_loc));
+        VAL(node, new_bool(keyword->bool_value, *loc));
         return keyword->token;
     }
-    VAL(node, new_var(matched().c_str(), UNKNOWN, lex_loc));
+    VAL(node, new_var(matched().c_str(), UNKNOWN, *loc));
     return Parser::IDENTIFIER;
 }
 
 .                   {
     if (matched()[0] == '\'' || matched()[0] == '"') {
-        panic(lex_loc, PARSE_SYNTAX, "unclosed quotation mark");
-        SA_lexer_mark_error();
+        panic(*loc, PARSE_SYNTAX, "unclosed quotation mark");
+        lexMarkErr();
         return Parser::LEX_ERROR;
     }
     unsigned char b0 = static_cast<unsigned char>(matched()[0]);
     char detail[32];
     snprintf(detail, sizeof(detail), "0x%02X", b0);
-    panic(lex_loc, LEX_UNKNOWN_CHAR, detail);
-    SA_lexer_mark_error();
+    panic(*loc, LEX_UNKNOWN_CHAR, detail);
+    lexMarkErr();
     return Parser::LEX_ERROR;
 }
 
 <<EOF>>             {
-    if (SA_brace_depth > 0) {
-        SA_Location lex_loc;
-        SA_lexer_get_cursor(&lex_loc);
-        panic(lex_loc, PARSE_UNCLOSED_BRACE, NULL);
-        SA_lexer_mark_error();
+    if (braceDepth > 0) {
+        panic(*loc, PARSE_UNCLOSED_BRACE, NULL);
+        lexMarkErr();
     }
     return 0;
 }

@@ -1,5 +1,5 @@
 #include "semantic/import.hpp"
-#include "frontend/parser/Parser.h"
+#include "Parser.h"
 #include "Scanner.h"
 #include "SymbolTable/SymbolTable.hpp"
 #include "semantic/semantic.hpp"
@@ -76,7 +76,6 @@ extern "C" ASTNode_t *parse_file(FILE *f) {
 
   ASTNode_t *old_root = root; // save current AST
   root = nullptr;             // reset for new parse
-  SA_lexer_reset_loc();
 
   int parse_status = restart(f, old_root);
 
